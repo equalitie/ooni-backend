@@ -15,7 +15,7 @@ from oonib.api import OONICollector, OONIBouncer
 from oonib.config import config
 from oonib.onion import get_global_tor
 from oonib.testhelpers import dns_helpers, ssl_helpers
-from oonib.testhelpers import http_helpers, tcp_helpers
+from oonib.testhelpers import http_helpers, tcp_helpers, peer_locator_helper
 
 from twisted.scripts import twistd
 from twisted.python import usage
@@ -151,6 +151,12 @@ class StartOONIBackendPlugin:
                                                  tcp_helpers.TCPEchoHelper())
             ooniBackendService.addService(tcp_echo_helper)
 
+        if config.helpers['peer-locator'].port:
+            print "Starting peer locator helper on %s" % config.helpers['peer-locator'].port
+            peer_locator_helper = internet.TCPServer(int(config.helpers['peer-locator'].port),
+                                                 peer_locator_helper.PeerLocatorHelper())
+            ooniBackendService.addService(peer_locator_helper)
+
         if config.helpers['http-return-json-headers'].port:
             print ("Starting HTTP return request helper on %s" %
                    config.helpers['http-return-json-headers'].port)
@@ -158,6 +164,8 @@ class StartOONIBackendPlugin:
                 int(config.helpers['http-return-json-headers'].port),
                 http_helpers.HTTPReturnJSONHeadersHelper())
             ooniBackendService.addService(http_return_request_helper)
+
+            
 
         # this is to ensure same behaviour with an old config file
         if config.main.tor_hidden_service and \
