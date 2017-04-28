@@ -15,7 +15,7 @@ from oonib.api import OONICollector, OONIBouncer
 from oonib.config import config
 from oonib.onion import get_global_tor
 from oonib.testhelpers import dns_helpers, ssl_helpers
-from oonib.testhelpers import http_helpers, tcp_helpers, peer_locator_helper
+from oonib.testhelpers import http_helpers, tcp_helpers, peer_locator_helpers
 
 from twisted.scripts import twistd
 from twisted.python import usage
@@ -139,6 +139,8 @@ class StartOONIBackendPlugin:
 
         # XXX this needs to be ported
         # Start the OONI daphn3 backend
+        import pdb
+        pdb.set_trace()
         if config.helpers['daphn3'].port:
             print "Starting Daphn3 helper on %s" % config.helpers['daphn3'].port
             daphn3_helper = internet.TCPServer(int(config.helpers['daphn3'].port),
@@ -154,7 +156,7 @@ class StartOONIBackendPlugin:
         if config.helpers['peer-locator'].port:
             print "Starting peer locator helper on %s" % config.helpers['peer-locator'].port
             peer_locator_helper = internet.TCPServer(int(config.helpers['peer-locator'].port),
-                                                 peer_locator_helper.PeerLocatorHelper())
+                                                 peer_locator_helpers.PeerLocatorHelper())
             ooniBackendService.addService(peer_locator_helper)
 
         if config.helpers['http-return-json-headers'].port:
