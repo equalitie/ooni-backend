@@ -12,16 +12,15 @@ class PeerLocatorProtocol(Protocol):
     and send another pair in response
     """
     def dataReceived(self, data):
-        import pdb
-        pdb.set_trace()
         self_peer = self.transport.getPeer(),data
+        log.msg(str(self_peer))
         try:
             self.peer_probes.append(self_peer)
-        except NameError:
+        except AttributeError:
             self.peer_probes = [self_peer]
             
         random_peer = self_peer
-        while(len(peer_probes) > 0 and random_peer == self_peer):
+        while(len(self.peer_probes) > 1 and random_peer == self_peer):
             random_peer = peer_probes[randint(0, peer_probes)]
 
         if (random_peer == self_peer):

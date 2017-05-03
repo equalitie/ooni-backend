@@ -80,5 +80,5 @@ helpers:
         #- {type: tls, port: 12443, fullchain: "private/fullchain.pem", privkey: "private/ssl-key.pem"}
         #- {type: tcp, port: 12080}
 
-    peer_locator:
+    peer-locator:
         port: 57007

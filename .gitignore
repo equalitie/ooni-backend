@@ -66,3 +66,5 @@ oonib.pid
 
 # Local vagrant files
 /.vagrant/
+log.txt
+oonib.conf.ec2

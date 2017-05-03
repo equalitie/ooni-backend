@@ -139,8 +139,6 @@ class StartOONIBackendPlugin:
 
         # XXX this needs to be ported
         # Start the OONI daphn3 backend
-        import pdb
-        pdb.set_trace()
         if config.helpers['daphn3'].port:
             print "Starting Daphn3 helper on %s" % config.helpers['daphn3'].port
             daphn3_helper = internet.TCPServer(int(config.helpers['daphn3'].port),
