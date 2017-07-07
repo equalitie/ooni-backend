@@ -6,9 +6,9 @@ from oonib import log
 import random
 import re
 
-_max_data_len = len('[0123:4567:89ab:cdef:0123:4567:89ab:cdef]:65535')
-# Accept ``PORT`` or ``ADDR:PORT`` with IPv4 ``ADDR`` or IPv6 ``[ADDR]``.
-_data_re = re.compile('^(?:([.0-9]+|\[[:0-9a-fA-F]+\]):)?([0-9]+)$')
+# Accept ``PORT[ FLAG]...``.
+_max_data_len = 100
+_data_re = re.compile(r'^([0-9]+)( [_a-z]+)*$')
 
 class PeerLocatorProtocol(Protocol):
     """
@@ -16,15 +16,19 @@ class PeerLocatorProtocol(Protocol):
     and send another pair in response
     """
     def dataReceived(self, data):
-        match = _data_re.match(data[:_max_data_len])  # protect against garbage
-        if not match:
+        # Protect against garbage.
+        data = data[:_max_data_len]
+        if not _data_re.match(data)
             return
-        (local_addr, port) = match.groups()
+        splitted = data.split()
+        port = splitted[0]
+        flags = splitted[1:]
 
-        remote_addr = self.transport.getPeer().host
-        self_peer = self_peer_short = '%s:%s' % (remote_addr, port)
-        if local_addr:
-            self_peer += ('/?nat=%s' % str(local_addr == remote_addr).lower())
+        self_peer = self_peer_short = '%s:%s' % (self.transport.getPeer().host, port)
+        if flags:  # add a query string
+            query = []
+            query.add('nat=%s' % str('nat' in flags).lower())
+            self_peer += '/?' + '&'.join(query)
         random_peer = self_peer
 
         log.msg("registering: %s" % self_peer)
