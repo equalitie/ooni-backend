@@ -19,11 +19,12 @@ class PeerLocatorProtocol(Protocol):
         match = _data_re.match(data[:_max_data_len])  # protect against garbage
         if not match:
             return
-        (addr, port) = match.groups()
+        (local_addr, port) = match.groups()
 
-        self_peer = self_peer_short = '%s:%s' % (self.transport.getPeer().host, port)
-        if addr:
-            self_peer += ('/?l=%s' % addr)  # add local address
+        remote_addr = self.transport.getPeer().host
+        self_peer = self_peer_short = '%s:%s' % (remote_addr, port)
+        if local_addr:
+            self_peer += ('/?nat=%s' % str(local_addr == remote_addr).lower())
         random_peer = self_peer
 
         log.msg("registering: %s" % self_peer)
@@ -40,7 +41,7 @@ class PeerLocatorProtocol(Protocol):
 
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
-                # The file may contain ``PUB_ADDR:PORT`` or ``PUB_ADDR:PORT/?l=LOC_ADDR`` entries,
+                # The file may contain ``PUB_ADDR:PORT`` or ``PUB_ADDR:PORT/?QUERY_ARGS`` entries,
                 # do not return any entry with the same ``PUB_ADDR:PORT``.
                 random_peer_short = self_peer_short
                 while(peer_pool_size > 1 and random_peer_short == self_peer_short):
