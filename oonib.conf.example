@@ -79,3 +79,6 @@ helpers:
         - {type: onion, hsdir: "/tmp/web_connectivity"}
         #- {type: tls, port: 12443, fullchain: "private/fullchain.pem", privkey: "private/ssl-key.pem"}
         #- {type: tcp, port: 12080}
+
+    peer-locator:
+        port: 57007
