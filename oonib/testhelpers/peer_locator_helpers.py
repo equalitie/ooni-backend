@@ -22,7 +22,7 @@ class PeerLocatorProtocol(Protocol):
     pobes) or a port number and a set of flags (for new probes).  It stores a
     time-stamped entry with the probe's public address, the reported port
     number and flags.  Then it replies with a random entry which does not
-    share the same address and port, in the form of a protocol-less,
+    share the same address and port.  For old probes, a protocol-less,
     URL-compatible string is sent back with the flags and time stamp encoded
     as query arguments.
 
@@ -34,7 +34,11 @@ class PeerLocatorProtocol(Protocol):
 
         80 nat
 
-    Example of reply::
+    Example of reply (new probe)::
+
+        1500288137.95785 192.0.2.1:80 nat
+
+    Example of reply (old probe)::
 
         192.0.2.1:80/?ts=1500288137.95785&nat=true
     """
@@ -62,6 +66,10 @@ class PeerLocatorProtocol(Protocol):
         return (float(splitted[0]), splitted[1], tuple(splitted([2:])))
 
     def _formatPeerEntry(self, peer):
+        """Format the given `peer` into a string."""
+        return b'%f %s %s' % (peer[0], peer[1], ' '.join(peer[2]))
+
+    def _formatPeerEntryOld(self, peer):
         """Format the given `peer` into a URL-compatible string."""
         (ts, addr, flags) = peer
         s = b'%s/?ts=%f' % (addr, ts)
@@ -104,7 +112,8 @@ class PeerLocatorProtocol(Protocol):
             out = ''
         else:
             log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer_addr))
-            out = _formatPeerEntry(random_peer)
+            out = (_formatPeerEntry(random_peer) if not is_old_probe
+                   else _formatPeerEntryOld(random_peer))
 
         self.transport.write(out)
 
