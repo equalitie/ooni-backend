@@ -9,42 +9,43 @@ import re
 import time
 
 
-# Accept ``PORT[ FLAG]...``.
+# Accept ``PORT`` or ``PORT PROTO[ FLAG]...``.
 _max_data_len = 100
-_data_re = re.compile(r'^([0-9]+)( [_a-z]+)*$')
+_data_re = re.compile(r'^([0-9]+)(| [A-Z]+( [_a-z]+)*)$')
 
 # Discard peer entries older than this many seconds.
 MAX_PEER_AGE_SECS = 2 * 24 * 60 * 60  # 2 days
 
 
-# A peer entry with a time stamp, transport address and a tuple of flags.
-PeerEntry = collections.namedtuple('PeerEntry', 'ts addr flags')
+# A peer entry with a time stamp, transport address, protocol and a tuple of flags.
+PeerEntry = collections.namedtuple('PeerEntry', 'ts addr proto flags')
 
 class PeerLocatorProtocol(Protocol):
     """A simple protocol to get the P2P address of a probe and send that of
     another one in response.
 
-    The helper receives a string with either just a port number (for old
-    pobes) or a port number and a set of flags (for new probes).  It stores a
-    time-stamped entry with the probe's public address, the reported port
-    number and flags.  Then it replies with a random entry which does not
-    share the same address and port.  For old probes, a protocol-less,
+    The helper receives a string with either just a port number (for old HTTP
+    pobes) or a port number, a protocol and a set of flags (for new probes).
+    It stores a time-stamped entry with the probe's public address, the
+    reported port number, protocol and flags.  Then it replies with a random
+    entry of the same protocol which does not share the same address and port,
+    and which is not very old.  For old probes, a protocol-less, HTTP
     URL-compatible string is sent back with the flags and time stamp encoded
     as query arguments.
 
-    Example of received message (old probe on P2P port 80)::
+    Example of received message (old HTTP probe on P2P port 80)::
 
         80
 
-    Example of received message (new probe on P2P port 80 behind NAT)::
+    Example of received message (new HTTP probe on P2P port 80 behind NAT)::
 
-        80 nat
+        80 HTTP nat
 
     Example of reply (new probe)::
 
-        1500288137.95785 192.0.2.1:80 nat
+        1500288137.95785 192.0.2.1:80 HTTP nat
 
-    Example of reply (old probe)::
+    Example of reply (old probe, implicit HTTP)::
 
         192.0.2.1:80/?ts=1500288137.95785&nat=true
     """
@@ -62,21 +63,30 @@ class PeerLocatorProtocol(Protocol):
         # Construct the entry.
         splitted = data.split()
         port = int(splitted[0])
-        flags = tuple(splitted[1:])
+        if len(splitted) > 1:  # new probe
+            proto = splitted[1]
+            flags = tuple(splitted[2:])
+        else:  # old probe
+            proto = 'HTTP'
+            flags = ()
 
-        return PeerEntry(time.time(), b'%s:%d' % (self.transport.getPeer().host, port), flags)
+        return PeerEntry(ts=time.time(),
+                         addr=b'%s:%d' % (self.transport.getPeer().host, port),
+                         proto=proto, flags=flags)
 
     def _parsePeerEntry(self, data):
         """Parse `data` and return a `PeerEntry`."""
         splitted = data.split()
-        return PeerEntry(float(splitted[0]), splitted[1], tuple(splitted([2:])))
+        return PeerEntry(ts=float(splitted[0]),
+                         addr=splitted[1],
+                         proto=splitted[2], flags=tuple(splitted([3:])))
 
     def _formatPeerEntry(self, peer):
         """Format the given `peer` entry into a string."""
-        return b'%f %s %s' % (peer.ts, peer.addr, ' '.join(peer.flags))
+        return b'%f %s %s %s' % (peer.ts, peer.addr, peer.proto, ' '.join(peer.flags))
 
     def _formatPeerEntryOld(self, peer):
-        """Format the given `peer` into a URL-compatible string."""
+        """Format the given `peer` into an HTTP URL-compatible string."""
         s = b'%s/?ts=%f' % (peer.addr, peer.ts)
         s += b'&nat=%s' % bytes(b'nat' in peer.flags).lower()
         return s
@@ -92,7 +102,8 @@ class PeerLocatorProtocol(Protocol):
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
-                peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS),
+                peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS
+                                              and p.proto == peer.proto),
                                    [_parsePeerEntry(l) for l in peer_list_file.readlines()])
                 if peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
