@@ -104,12 +104,12 @@ class PeerLocatorProtocol(Protocol):
                 now = time.time()  # only consider entries not older than max peer age
                 peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS
                                               and p.proto == peer.proto),
-                                   [_parsePeerEntry(l) for l in peer_list_file.readlines()])
+                                   [self._parsePeerEntry(l) for l in peer_list_file.readlines()])
                 if peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
                 else:
                     log.msg('new peer: %s' % (peer,))
-                    peer_list_file.write(_formatPeerEntry(peer) + '\n')
+                    peer_list_file.write(self._formatPeerEntry(peer) + '\n')
                     peer_list.append(peer)
                 peer_pool_size = len(peer_list)
 
@@ -127,8 +127,8 @@ class PeerLocatorProtocol(Protocol):
             out = ''
         else:
             log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer.addr))
-            out = (_formatPeerEntry(random_peer) if not is_old_probe
-                   else _formatPeerEntryOld(random_peer))
+            out = (self._formatPeerEntry(random_peer) if not is_old_probe
+                   else self._formatPeerEntryOld(random_peer))
 
         self.transport.write(out)
 
