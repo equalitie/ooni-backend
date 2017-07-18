@@ -14,7 +14,7 @@ _max_data_len = 100
 _data_re = re.compile(r'^([0-9]+)(| [A-Z]+( [_a-z]+)*)$')
 
 # Discard peer entries older than this many seconds.
-MAX_PEER_AGE_SECS = 2 * 24 * 60 * 60  # 2 days
+MAX_PEER_AGE_SECS = (7 - 1) * 24 * 60 * 60  # 6 days, one less than max server age
 
 
 # A peer entry with a time stamp, transport address, protocol and a tuple of flags.
