@@ -3,9 +3,11 @@ from twisted.internet.protocol import Protocol, Factory, ServerFactory
 from oonib.config import config
 from oonib import log
 
+import collections
 import random
 import re
 import time
+
 
 # Accept ``PORT[ FLAG]...``.
 _max_data_len = 100
@@ -13,6 +15,10 @@ _data_re = re.compile(r'^([0-9]+)( [_a-z]+)*$')
 
 # Discard peer entries older than this many seconds.
 MAX_PEER_AGE_SECS = 2 * 24 * 60 * 60  # 2 days
+
+
+# A peer entry with a time stamp, transport address and a tuple of flags.
+PeerEntry = collections.namedtuple('PeerEntry', 'ts addr flags')
 
 class PeerLocatorProtocol(Protocol):
     """A simple protocol to get the P2P address of a probe and send that of
@@ -44,7 +50,7 @@ class PeerLocatorProtocol(Protocol):
     """
 
     def _parseInput(self, data):
-        """Parse `data` and return a tuple of current time stamp, address and flags.
+        """Parse `data` and return a new `PeerEntry`.
 
         If `data` has a bad format, return `None`.
         """
@@ -58,39 +64,37 @@ class PeerLocatorProtocol(Protocol):
         port = int(splitted[0])
         flags = tuple(splitted[1:])
 
-        return (time.time(), b'%s:%d' % (self.transport.getPeer().host, port), flags)
+        return PeerEntry(time.time(), b'%s:%d' % (self.transport.getPeer().host, port), flags)
 
     def _parsePeerEntry(self, data):
-        """Parse `data` and return a peer entry tuple."""
+        """Parse `data` and return a `PeerEntry`."""
         splitted = data.split()
-        return (float(splitted[0]), splitted[1], tuple(splitted([2:])))
+        return PeerEntry(float(splitted[0]), splitted[1], tuple(splitted([2:])))
 
     def _formatPeerEntry(self, peer):
-        """Format the given `peer` into a string."""
-        return b'%f %s %s' % (peer[0], peer[1], ' '.join(peer[2]))
+        """Format the given `peer` entry into a string."""
+        return b'%f %s %s' % (peer.ts, peer.addr, ' '.join(peer.flags))
 
     def _formatPeerEntryOld(self, peer):
         """Format the given `peer` into a URL-compatible string."""
-        (ts, addr, flags) = peer
-        s = b'%s/?ts=%f' % (addr, ts)
-        s += b'&nat=%s' % bytes(b'nat' in flags).lower()
+        s = b'%s/?ts=%f' % (peer.addr, peer.ts)
+        s += b'&nat=%s' % bytes(b'nat' in peer.flags).lower()
         return s
 
     def dataReceived(self, data):
         peer = self._parseInput(data)
         if not peer:
             return
-        (ts, peer_addr, flags) = peer
-        is_old_probe = bool(flags)  # old probes report no flags
+        is_old_probe = bool(peer.flags)  # old probes report no flags
 
-        log.msg("registering: %s" % peer_addr)
-        random_peer_addr = peer_addr
+        log.msg("registering: %s" % peer.addr)
+        random_peer_addr = peer.addr
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
-                peer_list = filter(lambda p: ((now - p[0]) < MAX_PEER_AGE_SECS),
+                peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS),
                                    [_parsePeerEntry(l) for l in peer_list_file.readlines()])
-                if peer_addr in [p[1] for p in peer_list]:  # only compare IP:PORT
+                if peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
                 else:
                     log.msg('new peer: %s' % (peer,))
@@ -101,17 +105,17 @@ class PeerLocatorProtocol(Protocol):
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
                 # Do not return any entry with the same ``PUB_ADDR:PORT``.
-                while(peer_pool_size > 1 and random_peer_addr == peer_addr):
+                while(peer_pool_size > 1 and random_peer_addr == peer.addr):
                     random_peer = random.choice(peer_list)
                     random_peer_addr = random_peer[1]
 
         except IOError as e:
             log.msg("IOError %s" % e)
 
-        if (random_peer_addr == peer_addr):
+        if (random_peer_addr == peer.addr):
             out = ''
         else:
-            log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer_addr))
+            log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer.addr))
             out = (_formatPeerEntry(random_peer) if not is_old_probe
                    else _formatPeerEntryOld(random_peer))
 
