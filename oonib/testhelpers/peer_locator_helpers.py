@@ -48,6 +48,8 @@ class PeerLocatorProtocol(Protocol):
     Example of reply (old probe, implicit HTTP)::
 
         192.0.2.1:80/?ts=1500288137.95785&nat=true
+
+    NAT is assumed unless explicitly stated with the ``nonat`` flag.
     """
 
     def _parseInput(self, data):
@@ -88,7 +90,7 @@ class PeerLocatorProtocol(Protocol):
     def _formatPeerEntryOld(self, peer):
         """Format the given `peer` into an HTTP URL-compatible string."""
         s = b'%s/?ts=%f' % (peer.addr, peer.ts)
-        s += b'&nat=%s' % bytes(b'nat' in peer.flags).lower()
+        s += b'&nat=%s' % ('false' if b'nonat' in peer.flags else 'true')
         return s
 
     def dataReceived(self, data):
