@@ -97,7 +97,7 @@ class PeerLocatorProtocol(Protocol):
         peer = self._parseInput(data)
         if not peer:
             return
-        is_old_probe = bool(peer.flags)  # old probes report no flags
+        is_new_probe = bool(peer.flags)  # old probes report no flags
 
         log.msg("registering: %s" % peer.addr)
         random_peer_addr = peer.addr
@@ -129,7 +129,7 @@ class PeerLocatorProtocol(Protocol):
             out = ''
         else:
             log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer.addr))
-            out = (self._formatPeerEntry(random_peer) if not is_old_probe
+            out = (self._formatPeerEntry(random_peer) if is_new_probe
                    else self._formatPeerEntryOld(random_peer))
 
         self.transport.write(out)
