@@ -82,3 +82,4 @@ helpers:
 
     peer-locator:
         port: 57007
+        peer_list: 'data/peers.txt'

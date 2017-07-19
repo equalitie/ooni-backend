@@ -165,8 +165,6 @@ class StartOONIBackendPlugin:
                 http_helpers.HTTPReturnJSONHeadersHelper())
             ooniBackendService.addService(http_return_request_helper)
 
-            
-
         # this is to ensure same behaviour with an old config file
         if config.main.tor_hidden_service and \
                 config.main.bouncer_endpoints is None and \
