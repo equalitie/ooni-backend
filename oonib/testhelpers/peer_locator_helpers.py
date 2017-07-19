@@ -59,7 +59,7 @@ class PeerLocatorProtocol(Protocol):
         """
         # Protect against garbage.
         data = data[:_max_data_len]
-        if not _data_re.match(data)
+        if not _data_re.match(data):
             return
 
         # Construct the entry.
@@ -81,7 +81,7 @@ class PeerLocatorProtocol(Protocol):
         splitted = data.split()
         return PeerEntry(ts=float(splitted[0]),
                          addr=splitted[1],
-                         proto=splitted[2], flags=tuple(splitted([3:])))
+                         proto=splitted[2], flags=tuple(splitted[3:]))
 
     def _formatPeerEntry(self, peer):
         """Format the given `peer` entry into a string."""
