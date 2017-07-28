@@ -31,6 +31,11 @@ class PeerLocatorProtocol(Protocol):
     same protocol which does not share the same address and port, and which is
     not very old.
 
+    If the received port number is 0 the entry is not compared nor stored, but
+    an entry of the same protocol is still sent back if available to the
+    probe.  This can be used by probes which have not started their own peer
+    (or have failed to do so) to just query for a peer of a given protocol.
+
     Old HTTP probes only send a port number.  This is also accepted, and in
     this case a protocol-less, HTTP URL-compatible string is sent back with
     the flags and time stamp encoded as query arguments.
