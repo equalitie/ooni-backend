@@ -114,7 +114,9 @@ class PeerLocatorProtocol(Protocol):
                 peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS
                                               and p.proto == peer.proto),
                                    [self._parsePeerEntry(l) for l in peer_list_file.readlines()])
-                if peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
+                if peer.addr.endswith(':0'):
+                    log.msg('query-only request, not saving peer')
+                elif peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
                 else:
                     log.msg('new peer: %s' % (peer,))
@@ -125,6 +127,7 @@ class PeerLocatorProtocol(Protocol):
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
                 # Do not return any entry with the same ``PUB_ADDR:PORT``.
+                # Query-only peers never match since entries with port 0 are never stored.
                 while(peer_pool_size > 1 and random_peer_addr == peer.addr):
                     random_peer = random.choice(peer_list)
                     random_peer_addr = random_peer[1]
