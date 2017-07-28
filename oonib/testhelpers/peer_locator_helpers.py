@@ -25,7 +25,7 @@ class PeerLocatorProtocol(Protocol):
     another one in response.
 
     The helper receives a string with either just a port number (for old HTTP
-    pobes) or a port number, a protocol and a set of flags (for new probes).
+    probes) or a port number, a protocol and a set of flags (for new probes).
     It stores a time-stamped entry with the probe's public address, the
     reported port number, protocol and flags.  Then it replies with a random
     entry of the same protocol which does not share the same address and port,
