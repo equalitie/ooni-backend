@@ -24,14 +24,21 @@ class PeerLocatorProtocol(Protocol):
     """A simple protocol to get the P2P address of a probe and send that of
     another one in response.
 
-    The helper receives a string with either just a port number (for old HTTP
-    pobes) or a port number, a protocol and a set of flags (for new probes).
-    It stores a time-stamped entry with the probe's public address, the
-    reported port number, protocol and flags.  Then it replies with a random
-    entry of the same protocol which does not share the same address and port,
-    and which is not very old.  For old probes, a protocol-less, HTTP
-    URL-compatible string is sent back with the flags and time stamp encoded
-    as query arguments.
+    The helper receives a string with a port number, a protocol and a set of
+    flags, all separated by a single space (including flags).  It stores a
+    time-stamped entry with the probe's public address, the reported port
+    number, protocol and flags.  Then it replies with a random entry of the
+    same protocol which does not share the same address and port, and which is
+    not very old.
+
+    If the received port number is 0 the entry is not compared nor stored, but
+    an entry of the same protocol is still sent back if available to the
+    probe.  This can be used by probes which have not started their own peer
+    (or have failed to do so) to just query for a peer of a given protocol.
+
+    Old HTTP probes only send a port number.  This is also accepted, and in
+    this case a protocol-less, HTTP URL-compatible string is sent back with
+    the flags and time stamp encoded as query arguments.
 
     Example of received message (old HTTP probe on P2P port 80)::
 
@@ -107,7 +114,9 @@ class PeerLocatorProtocol(Protocol):
                 peer_list = filter(lambda p: ((now - p.ts) < MAX_PEER_AGE_SECS
                                               and p.proto == peer.proto),
                                    [self._parsePeerEntry(l) for l in peer_list_file.readlines()])
-                if peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
+                if peer.addr.endswith(':0'):
+                    log.msg('query-only request, not saving peer')
+                elif peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
                 else:
                     log.msg('new peer: %s' % (peer,))
@@ -118,6 +127,7 @@ class PeerLocatorProtocol(Protocol):
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
                 # Do not return any entry with the same ``PUB_ADDR:PORT``.
+                # Query-only peers never match since entries with port 0 are never stored.
                 while(peer_pool_size > 1 and random_peer_addr == peer.addr):
                     random_peer = random.choice(peer_list)
                     random_peer_addr = random_peer[1]
