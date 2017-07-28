@@ -24,14 +24,15 @@ class PeerLocatorProtocol(Protocol):
     """A simple protocol to get the P2P address of a probe and send that of
     another one in response.
 
-    The helper receives a string with either just a port number (for old HTTP
-    probes) or a port number, a protocol and a set of flags (for new probes).
-    It stores a time-stamped entry with the probe's public address, the
-    reported port number, protocol and flags.  Then it replies with a random
-    entry of the same protocol which does not share the same address and port,
-    and which is not very old.  For old probes, a protocol-less, HTTP
-    URL-compatible string is sent back with the flags and time stamp encoded
-    as query arguments.
+    The helper receives a string with a port number, a protocol and a set of
+    flags.  It stores a time-stamped entry with the probe's public address,
+    the reported port number, protocol and flags.  Then it replies with a
+    random entry of the same protocol which does not share the same address
+    and port, and which is not very old.
+
+    Old HTTP probes only send a port number.  This is also accepted, and in
+    this case a protocol-less, HTTP URL-compatible string is sent back with
+    the flags and time stamp encoded as query arguments.
 
     Example of received message (old HTTP probe on P2P port 80)::
 
