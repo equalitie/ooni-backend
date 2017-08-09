@@ -69,7 +69,7 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
             altsock.sendto(reply, (host, port))
 
 
-def unpackAddr(s):  # '1.2.3.4:1234' -> ('1.2.3.4', 1234)
+def _unpackAddr(s):  # '1.2.3.4:1234' -> ('1.2.3.4', 1234)
     host, port = s.rsplit(':', 1) if ':' in s else ('', s)
     host = host.translate(None, '[]')  # delete IPv6 brackets
     port = int(port)
@@ -83,8 +83,8 @@ def main():
             % sys.argv[0])
         sys.exit(1)
 
-    mainHost, mainPort = unpackAddr(sys.argv[1])
-    altAddrs = [unpackAddr(s) for s in sys.argv[2:]]
+    mainHost, mainPort = _unpackAddr(sys.argv[1])
+    altAddrs = [_unpackAddr(s) for s in sys.argv[2:]]
 
     proto = NATDetectionProtocol(altAddrs)
 
