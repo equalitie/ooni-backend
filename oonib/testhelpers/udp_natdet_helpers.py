@@ -25,6 +25,13 @@ except ImportError:
     config = None
 
 
+"""Default endpoint IP address when the host part is not specified.
+
+The IPv4 wildcard is used for compatibility with how the OONI backend
+interprets null addresses in its configuration file.
+"""
+DEF_ENDPOINT_ADDR = ''
+
 # Format: "NATDET <16-hex digit peer name>"
 _data_re = re.compile(r'^NATDET [0-9a-f]{16}$')
 _max_data_len = len('NATDET 0123456789abcdef')
@@ -38,7 +45,7 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
         # Get alternate addresses from OONI backend config if available.
         if config and 'nat-detection' in config.helpers:
             configAltSources = config.helpers['nat-detection'].alternate_sources
-            self.altAddrs += [(addr['address'] or '', addr['port'])
+            self.altAddrs += [(addr['address'] or DEF_ENDPOINT_ADDR, addr['port'])
                               for addr in configAltSources]
 
         # Create sockets for alternate (send-only) addresses.
@@ -70,7 +77,7 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
 
 
 def _unpackAddr(s):  # '1.2.3.4:1234' -> ('1.2.3.4', 1234)
-    host, port = s.rsplit(':', 1) if ':' in s else ('', s)
+    host, port = s.rsplit(':', 1) if ':' in s else (DEF_ENDPOINT_ADDR, s)
     host = host.translate(None, '[]')  # delete IPv6 brackets
     port = int(port)
     return (host, port)
