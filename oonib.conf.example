@@ -86,7 +86,7 @@ helpers:
 
     nat-detection:
         # IP address and UDP port where messages are received and sent from.
-        # Use a null address for listening on all interfaces,
+        # Use a null address for listening on all IPv4 interfaces,
         # or give a explicit address if you want to use several ones.
         address: null
         port: 57008
