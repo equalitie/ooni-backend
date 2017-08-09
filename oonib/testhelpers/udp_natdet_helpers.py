@@ -79,7 +79,7 @@ def _unpackAddr(s):  # '1.2.3.4:1234' -> ('1.2.3.4', 1234)
 def main():
     if len(sys.argv) < 2:
         sys.stderr.write(
-            "Usage: %s [MAIN_HOST]:MAIN_PORT [[ALT_HOST]:ALT_PORT]...\n"
+            "Usage: %s [MAIN_HOST:]MAIN_PORT [[ALT_HOST:]ALT_PORT]...\n"
             % sys.argv[0])
         sys.exit(1)
 
