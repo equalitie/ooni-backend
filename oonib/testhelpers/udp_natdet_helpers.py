@@ -36,7 +36,7 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
 
     def startProtocol(self):
         # Get alternate addresses from OONI backend config if available.
-        if config:
+        if config and 'nat-detection' in config.helpers:
             configAltSources = config.helpers['nat-detection'].alternate_sources
             self.altAddrs += [(addr['address'] or '', addr['port'])
                               for addr in configAltSources]
