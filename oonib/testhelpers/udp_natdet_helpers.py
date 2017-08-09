@@ -19,6 +19,11 @@ import sys
 
 from twisted.internet import protocol, reactor
 
+try:
+    from oonib.config import config
+except ImportError:
+    config = None
+
 
 # Format: "NATDET <16-hex digit peer name>"
 _data_re = re.compile(r'^NATDET [0-9a-f]{16}$')
@@ -30,6 +35,12 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
         self.altAddrs = list(altAddrs)
 
     def startProtocol(self):
+        # Get alternate addresses from OONI backend config if available.
+        if config:
+            configAltSources = config.helpers['nat-detection'].alternate_sources
+            self.altAddrs += [(addr['address'] or '', addr['port'])
+                              for addr in configAltSources]
+
         # Create sockets for alternate (send-only) addresses.
         self.altSocks = []
         for (host, port) in self.altAddrs:
@@ -59,7 +70,7 @@ class NATDetectionProtocol(protocol.DatagramProtocol):
 
 
 def unpackAddr(s):  # '1.2.3.4:1234' -> ('1.2.3.4', 1234)
-    host, port = s.rsplit(':', 1) if ':' in s else ('::', s)
+    host, port = s.rsplit(':', 1) if ':' in s else ('', s)
     host = host.translate(None, '[]')  # delete IPv6 brackets
     port = int(port)
     return (host, port)

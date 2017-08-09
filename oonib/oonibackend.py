@@ -15,7 +15,8 @@ from oonib.api import OONICollector, OONIBouncer
 from oonib.config import config
 from oonib.onion import get_global_tor
 from oonib.testhelpers import dns_helpers, ssl_helpers
-from oonib.testhelpers import http_helpers, tcp_helpers, peer_locator_helpers
+from oonib.testhelpers import http_helpers, tcp_helpers
+from oonib.testhelpers import peer_locator_helpers, udp_natdet_helpers
 
 from twisted.scripts import twistd
 from twisted.python import usage
@@ -156,6 +157,12 @@ class StartOONIBackendPlugin:
             peer_locator_helper = internet.TCPServer(int(config.helpers['peer-locator'].port),
                                                  peer_locator_helpers.PeerLocatorHelper())
             ooniBackendService.addService(peer_locator_helper)
+
+        if config.helpers['nat-detection'].port:
+            print "Starting NAT detection helper on %s" % config.helpers['nat-detection'].port
+            nat_detection_helper = internet.UDPServer(int(config.helpers['nat-detection'].port),
+                                                      udp_natdet_helpers.NATDetectionProtocol())
+            ooniBackendService.addService(nat_detection_helper)
 
         if config.helpers['http-return-json-headers'].port:
             print ("Starting HTTP return request helper on %s" %

@@ -83,3 +83,13 @@ helpers:
     peer-locator:
         port: 57007
         peer_list: 'data/peers.txt'
+
+    nat-detection:
+        # IP address and UDP port where messages are received and sent from.
+        # Use a null address for listening on all interfaces,
+        # or give a explicit address if you want to use several ones.
+        address: null
+        port: 57008
+        # Optional endpoints where messages are also sent from.
+        alternate_sources:
+            - {address: null, port: 57009}
