@@ -64,6 +64,48 @@ _max_data_len = len('NATDET 0123456789abcdef')
 
 
 class NATDetectionProtocol(protocol.DatagramProtocol):
+    """Trivial UDP protocol to help with the detection of NAT.
+
+    This protocol helps detect different types of NAT by echoing back the
+    received payload not only from the receiving (main) address, but also from
+    additional (alternate) ones.  To configure alternate addresses, you may
+    either provide a sequence of ``(ip, port)`` pairs to the constructor, or
+    use the backend's configuration file (see below).
+
+    The *protocol* is very simple.  A message is received from the client at
+    the main address with the following format::
+
+        NATDET <16-hex digit id>
+
+    Then a reply is sent from the main address and also from alternate
+    addresses with the following format::
+
+        NATDET <16-hex digit id> <IP>:<PORT>
+
+    Where ``<IP>:<PORT>`` is the transport address of the client as seen in
+    the received datagram.
+
+    For *configuration*, when available, the protocol uses the
+    ``nat-detection`` key under the ``helpers`` main key.  The following keys
+    must be specified there:
+
+    ``address``
+      The IP address of the UDP endpoint where messages are received and sent
+      from (main address).  Use a null address for listening on all IPv4
+      interfaces, or give a explicit address if you want to use several ones.
+
+    ``port``
+      The port number of the UDP endpoint where messages are received and sent
+      from (main address).
+
+    ``alternate_sources``
+      A (maybe empty) list of UDP endpoints where messages are also sent from
+      (alternate addresses).  Each entry in the list is a mapping with
+      ``address`` and ``port`` keys, with semantics similar to those defining
+      the main address.  It is recommended that you include at least one entry
+      with a different port than the main address and, if the host has it, one
+      with a different, explicit IP address.
+    """
     def __init__(self, altAddrs=[]):
         self.altAddrs = list(altAddrs)
 
