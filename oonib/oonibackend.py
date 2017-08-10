@@ -159,7 +159,12 @@ class StartOONIBackendPlugin:
             ooniBackendService.addService(peer_locator_helper)
 
         if config.helpers['nat-detection'].port:
-            print "Starting NAT detection helper on %s" % config.helpers['nat-detection'].port
+            natdet_altports = [str(addr['port'])
+                              for addr in config.helpers['nat-detection'].alternate_sources]
+            print "Starting NAT detection helper on %s%s" % (
+                config.helpers['nat-detection'].port,
+                (' (+ %s)' % ' '.join(natdet_altports)) if natdet_altports else ''
+            )
             nat_detection_helper = internet.UDPServer(int(config.helpers['nat-detection'].port),
                                                       udp_natdet_helpers.NATDetectionProtocol())
             ooniBackendService.addService(nat_detection_helper)
