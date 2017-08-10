@@ -91,5 +91,7 @@ helpers:
         address: null
         port: 57008
         # Optional endpoints where messages are also sent from.
+        # Please include one with an explicit address if you have several ones.
+        # Set to [] for no alternate sources.
         alternate_sources:
             - {address: null, port: 57009}
