@@ -1,17 +1,38 @@
-#!/usr/bin/env python2
+"""UDP-based NAT detection helper.
 
-# This piece of code only does basic format checking and will reply to all
-# requests that look valid. Therefore, if used as-is, it can be used for rebound
-# attacks via UDP source address spoofing. It is recommended to use ip(6)tables
-# to limit the rate of requests that reach this helper, for example:
-#
-# iptables -A INPUT -p udp --dport <server_port> -m hashlimit \
-#          --hashlimit-name nat-detect-helper --hashlimit-above 5/minute \
-#          --hashlimit-mode srcip,dstip,dstport --hashlimit-burst 5 \
-#          --hashlimit-srcmask 32 -j DROP
-#
-# See iptables' hashlimit module documentation. For IPv6, the source mask can
-# be set to values up to 128 (56 or 64 would generally be reasonable choices).
+XXXX TBD
+
+This piece of code only does basic format checking and will reply to all
+requests that look valid.  Therefore, if used as-is, it can be used for
+rebound attacks via UDP source address spoofing.  With Linux, it is
+recommended to use ``ip(6)tables`` to limit the rate of requests that reach
+this helper, for example::
+
+    # iptables -A INPUT -p udp --dport <server_port> -m hashlimit \
+               --hashlimit-name nat-detect-helper --hashlimit-above 5/minute \
+               --hashlimit-mode srcip,dstip,dstport --hashlimit-burst 5 \
+               --hashlimit-srcmask 32 -j DROP
+
+See iptables' ``hashlimit`` module documentation.  For IPv6, the source mask
+can be set to values up to 128 (56 or 64 would generally be reasonable
+choices).
+
+XXXX TBD
+
+Besides being run as a OONI backend helper, the helper can be run standalone
+if Twisted is available.  It requires at least one argument with an
+``[MAIN_HOST:]MAIN_PORT`` address and optional arguments with
+``[ALT_HOST:]ALT_PORT`` addresses.
+
+Example standalone invocation::
+
+    $ python /path/to/udp_natdet_helpers.py 12345 12346 192.0.2.1:13579
+
+This receives messages on port 12345 of all interfaces and sends replies from
+that port (using whatever source IP the system chooses), and also from port
+12346 (using whatever source IP the system chooses) and from IP ``192.0.2.1``
+and port 13579.
+"""
 
 import re
 import socket
