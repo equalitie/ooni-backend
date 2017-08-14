@@ -25,9 +25,10 @@ Standalone execution
 --------------------
 
 Besides being run as a OONI backend helper, the helper can be run standalone
-if Twisted is available.  It requires at least one argument with a
-``[MAIN_HOST:]MAIN_PORT`` main address and optional arguments with
-``[ALT_HOST:]ALT_PORT`` alternate addresses.
+if Twisted is available (package ``python-twisted-core`` in Debian Wheezy and
+newer).  It requires at least one argument with a ``[MAIN_HOST:]MAIN_PORT``
+main address and optional arguments with ``[ALT_HOST:]ALT_PORT`` alternate
+addresses.
 
 Example standalone invocation::
 
@@ -37,6 +38,28 @@ This receives messages on port 12345 of all interfaces and sends replies from
 that port (using whatever source IP the system chooses), and also from port
 12346 (using whatever source IP the system chooses) and from IP ``192.0.2.1``
 and port 13579.
+
+To run the previous configuration as a permanent systemd service under
+GNU/Linux, you may create a unit file like the following one::
+
+    [Unit]
+    Description=NAT detection server
+    After=network.target
+
+    [Service]
+    ExecStart=/usr/bin/python2 /path/to/udp_natdet_helpers.py 12345 12346 192.0.2.1:13579
+    Restart=on-failure
+    User=nobody
+    Group=nogroup
+
+    [Install]
+    WantedBy=default.target
+
+Save it as ``/etc/systemd/system/natdet-server.service`` and enable and start
+it with::
+
+    # systemctl enable natdet-server
+    # systemctl start natdet-server
 """
 
 import re
