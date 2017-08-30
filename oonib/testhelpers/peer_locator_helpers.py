@@ -143,6 +143,7 @@ class PeerLocatorProtocol(Protocol):
                    else self._formatPeerEntryOld(random_peer))
 
         self.transport.write(out)
+        self.transport.loseConnection()
 
 class PeerLocatorHelper(Factory):
     protocol = PeerLocatorProtocol
