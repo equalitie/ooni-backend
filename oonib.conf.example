@@ -96,3 +96,7 @@ helpers:
         # Set to [] for no alternate sources.
         alternate_sources:
             - {address: null, port: 57009}
+
+    web-uuid2page:
+        endpoints:
+        - {type: tcp, port: 57010}

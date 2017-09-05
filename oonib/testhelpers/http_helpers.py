@@ -193,6 +193,20 @@ class HTTPRandomPage(HTTPTrapAll):
         self.write(self.genRandomPage(length, keyword))
 
 
+class Path2Text(HTTPTrapAll):
+    """
+    This accepts a single path element and returns a text document with just
+    the path element in it.
+
+    Useful to generate arbitrary but predictable pages and headers.
+    """
+    isLeaf = True
+
+    def all(self, e):
+        self.set_header('Content-Type', 'text/plain')
+        self.write(e)
+
+
 def encodeResponse(response):
     body = None
     body_length = 0
@@ -561,4 +575,9 @@ HTTPRandomPageHelper = Application([
 WebConnectivityHelper = Application([
     (r"/status", WebConnectivityStatus),
     (r"/", WebConnectivity)
+], log_function=log_function)
+
+UUID2PageHelper = Application([
+    # Regular expression for a UUID
+    (r"/u2p/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", Path2Text)
 ], log_function=log_function)

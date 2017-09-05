@@ -85,6 +85,8 @@ def createService(endpoint, role, endpoint_config):
         factory = OONICollector()
     elif role == 'web_connectivity':
         factory = http_helpers.WebConnectivityHelper
+    elif role == 'web_uuid2page':
+        factory = http_helpers.UUID2PageHelper
     else:
         raise Exception("unknown service type")
 
@@ -210,6 +212,14 @@ class StartOONIBackendPlugin:
                                                      'web_connectivity',
                                                      endpoint_config)
             ooniBackendService.addService(web_connectivity_service)
+
+        for endpoint_config in config.helpers.web_uuid2page.get('endpoints', []):
+            print "Starting web_uuid2page helper with config %s" % endpoint_config
+            endpoint = getEndpoint(endpoint_config)
+            web_uuid2page_service = createService(endpoint,
+                                                  'web_uuid2page',
+                                                  endpoint_config)
+            ooniBackendService.addService(web_uuid2page_service)
 
 
         return ooniBackendService
