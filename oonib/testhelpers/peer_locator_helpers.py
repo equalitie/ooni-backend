@@ -9,9 +9,9 @@ import re
 import time
 
 
-# Accept ``PORT`` or ``PORT PROTO FLAG...``.
+# Accept ``PORT`` or ``PORT PROTO FLAG[=VALUE]...``.
 _max_data_len = 100
-_data_re = re.compile(r'^[0-9]+(| [A-Z]+( [_a-z]+)+)$')
+_data_re = re.compile(r'^[0-9]+(| [A-Z]+( [_a-z]+(=\S*)?)+)$')
 
 # Discard peer entries older than this many seconds.
 MAX_PEER_AGE_SECS = (7 - 1) * 24 * 60 * 60  # 6 days, one less than max server age
@@ -25,11 +25,12 @@ class PeerLocatorProtocol(Protocol):
     another one in response.
 
     The helper receives a string with a port number, a protocol and a set of
-    flags, all separated by a single space (including flags).  It stores a
-    time-stamped entry with the probe's public address, the reported port
-    number, protocol and flags.  Then it replies with a random entry of the
-    same protocol which does not share the same address and port, and which is
-    not very old.
+    flags, all separated by a single space (including flags); flags may have a
+    possibly empty value assigned with ``=`` (no whitespace is allowed in flag
+    values).  The helper stores a time-stamped entry with the probe's public
+    address, the reported port number, protocol and flags.  Then it replies
+    with a random entry of the same protocol which does not share the same
+    address and port, and which is not very old.
 
     If the received port number is 0 the entry is not compared nor stored, but
     an entry of the same protocol is still sent back if available to the
