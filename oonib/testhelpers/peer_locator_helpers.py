@@ -10,7 +10,7 @@ import time
 
 
 # Accept ``PORT`` or ``PORT PROTO FLAG[=VALUE]...``.
-_max_data_len = 100
+_max_data_len = 200
 _data_re = re.compile(r'^[0-9]+(| [A-Z]+( [_a-z]+(=\S*)?)+)$')
 
 # Discard peer entries older than this many seconds.
