@@ -30,7 +30,7 @@ class PeerLocatorProtocol(Protocol):
     values).  The helper stores a time-stamped entry with the probe's public
     address, the reported port number, protocol and flags.  Then it replies
     with a random entry of the same protocol which does not share the same
-    address and port, and which is not very old.
+    address, port and flags, and which is not very old.
 
     If the received port number is 0 the entry is not compared nor stored, but
     an entry of the same protocol is still sent back if available to the
@@ -108,7 +108,8 @@ class PeerLocatorProtocol(Protocol):
         is_new_probe = bool(peer.flags)  # old probes report no flags
 
         log.msg("processing: %s" % (peer,))
-        random_peer_addr = peer.addr
+        peer_data = (peer.addr, set(peer.flags))
+        random_peer_data = peer_data
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
@@ -117,7 +118,7 @@ class PeerLocatorProtocol(Protocol):
                                    [self._parsePeerEntry(l) for l in peer_list_file.readlines()])
                 if peer.addr.endswith(':0'):
                     log.msg('query-only request, not saving peer')
-                elif peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
+                elif peer_data in [(p.addr, set(p.flags)) for p in peer_list]:  # compare IP:PORT and flags
                     log.msg('we already know the peer')
                 else:
                     log.msg('new peer')
@@ -127,16 +128,16 @@ class PeerLocatorProtocol(Protocol):
 
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
-                # Do not return any entry with the same ``PUB_ADDR:PORT``.
+                # Do not return any entry with the same ``PUB_ADDR:PORT`` and flags.
                 # Query-only peers never match since entries with port 0 are never stored.
-                while(peer_pool_size > 1 and random_peer_addr == peer.addr):
+                while(peer_pool_size > 1 and random_peer_data == peer_data):
                     random_peer = random.choice(peer_list)
-                    random_peer_addr = random_peer[1]
+                    random_peer_data = (random_peer.addr, set(random_peer.flags))
 
         except IOError as e:
             log.msg("IOError %s" % e)
 
-        if (random_peer_addr == peer.addr):
+        if (random_peer_data == peer_data):
             out = ''
         else:
             log.msg("seeding: %s" % (random_peer,))
