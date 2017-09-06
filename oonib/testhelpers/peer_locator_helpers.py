@@ -107,7 +107,7 @@ class PeerLocatorProtocol(Protocol):
             return
         is_new_probe = bool(peer.flags)  # old probes report no flags
 
-        log.msg("registering: %s" % peer.addr)
+        log.msg("processing: %s" % (peer,))
         random_peer_addr = peer.addr
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
@@ -120,7 +120,7 @@ class PeerLocatorProtocol(Protocol):
                 elif peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
                     log.msg('we already know the peer')
                 else:
-                    log.msg('new peer: %s' % (peer,))
+                    log.msg('new peer')
                     peer_list_file.write(self._formatPeerEntry(peer) + '\n')
                     peer_list.append(peer)
                 peer_pool_size = len(peer_list)
@@ -139,7 +139,7 @@ class PeerLocatorProtocol(Protocol):
         if (random_peer_addr == peer.addr):
             out = ''
         else:
-            log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer.addr))
+            log.msg("seeding: %s" % (random_peer,))
             out = (self._formatPeerEntry(random_peer) if is_new_probe
                    else self._formatPeerEntryOld(random_peer))
 
