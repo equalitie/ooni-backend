@@ -109,7 +109,7 @@ class PeerLocatorProtocol(Protocol):
 
         log.msg("processing: %s" % (peer,))
         peer_data = (peer.addr, set(peer.flags))
-        random_peer = peer
+        random_peer = None
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
@@ -123,24 +123,24 @@ class PeerLocatorProtocol(Protocol):
                 else:
                     log.msg('new peer')
                     peer_list_file.write(self._formatPeerEntry(peer) + '\n')
-                    peer_list.append(peer)
-                peer_pool_size = len(peer_list)
 
-                log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
-                # Do not return any entry with the same ``PUB_ADDR:PORT``.
+                # Get a peer entry with a different ``PUB_ADDR:PORT``.
                 # Query-only peers never match since entries with port 0 are never stored.
-                while(peer_pool_size > 1 and random_peer.addr == peer.addr):
-                    random_peer = random.choice(peer_list)
+                other_peers = [p for p in peer_list if p.addr != peer.addr]
+                log.msg("choosing a random peer from a pool of %d peers" % len(other_peers))
+                if other_peers:
+                    random_peer = random.choice(other_peers)
 
         except IOError as e:
             log.msg("IOError %s" % e)
 
-        if (random_peer.addr == peer.addr):
-            out = ''
-        else:
+        if random_peer:
             log.msg("seeding: %s" % (random_peer,))
             out = (self._formatPeerEntry(random_peer) if is_new_probe
                    else self._formatPeerEntryOld(random_peer))
+        else:
+            log.msg("no other peers to seed")
+            out = ''
 
         self.transport.write(out)
         self.transport.loseConnection()
