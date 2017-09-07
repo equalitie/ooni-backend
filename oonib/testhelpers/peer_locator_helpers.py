@@ -126,7 +126,6 @@ class PeerLocatorProtocol(Protocol):
                     peer_list.append(peer)
                 peer_pool_size = len(peer_list)
 
-                log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
                 # Do not return any entry with the same ``PUB_ADDR:PORT``.
                 # Query-only peers never match since entries with port 0 are never stored.
