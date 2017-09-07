@@ -30,7 +30,7 @@ class PeerLocatorProtocol(Protocol):
     values).  The helper stores a time-stamped entry with the probe's public
     address, the reported port number, protocol and flags.  Then it replies
     with a random entry of the same protocol which does not share the same
-    address, port and flags, and which is not very old.
+    address and port, and which is not very old.
 
     If the received port number is 0 the entry is not compared nor stored, but
     an entry of the same protocol is still sent back if available to the
@@ -109,7 +109,6 @@ class PeerLocatorProtocol(Protocol):
 
         log.msg("processing: %s" % (peer,))
         peer_data = (peer.addr, set(peer.flags))
-        random_peer_data = peer_data
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
@@ -128,16 +127,15 @@ class PeerLocatorProtocol(Protocol):
 
                 log.msg(str(peer_list))
                 log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
-                # Do not return any entry with the same ``PUB_ADDR:PORT`` and flags.
+                # Do not return any entry with the same ``PUB_ADDR:PORT``.
                 # Query-only peers never match since entries with port 0 are never stored.
-                while(peer_pool_size > 1 and random_peer_data == peer_data):
+                while(peer_pool_size > 1 and random_peer.addr == peer.addr):
                     random_peer = random.choice(peer_list)
-                    random_peer_data = (random_peer.addr, set(random_peer.flags))
 
         except IOError as e:
             log.msg("IOError %s" % e)
 
-        if (random_peer_data == peer_data):
+        if (random_peer.addr == peer.addr):
             out = ''
         else:
             log.msg("seeding: %s" % (random_peer,))
