@@ -109,6 +109,7 @@ class PeerLocatorProtocol(Protocol):
 
         log.msg("processing: %s" % (peer,))
         peer_data = (peer.addr, set(peer.flags))
+        random_peer = peer
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
