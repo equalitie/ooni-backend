@@ -97,6 +97,6 @@ helpers:
         alternate_sources:
             - {address: null, port: 57009}
 
-    web-uuid2page:
+    web_uuid2page:
         endpoints:
         - {type: tcp, port: 57010}
