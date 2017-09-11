@@ -9,9 +9,9 @@ import re
 import time
 
 
-# Accept ``PORT`` or ``PORT PROTO FLAG...``.
-_max_data_len = 100
-_data_re = re.compile(r'^[0-9]+(| [A-Z]+( [_a-z]+)+)$')
+# Accept ``PORT`` or ``PORT PROTO FLAG[=VALUE]...``.
+_max_data_len = 200
+_data_re = re.compile(r'^[0-9]+(| [A-Z]+( [_a-z]+(=\S*)?)+)$')
 
 # Discard peer entries older than this many seconds.
 MAX_PEER_AGE_SECS = (7 - 1) * 24 * 60 * 60  # 6 days, one less than max server age
@@ -25,11 +25,12 @@ class PeerLocatorProtocol(Protocol):
     another one in response.
 
     The helper receives a string with a port number, a protocol and a set of
-    flags, all separated by a single space (including flags).  It stores a
-    time-stamped entry with the probe's public address, the reported port
-    number, protocol and flags.  Then it replies with a random entry of the
-    same protocol which does not share the same address and port, and which is
-    not very old.
+    flags, all separated by a single space (including flags); flags may have a
+    possibly empty value assigned with ``=`` (no whitespace is allowed in flag
+    values).  The helper stores a time-stamped entry with the probe's public
+    address, the reported port number, protocol and flags.  Then it replies
+    with a random entry of the same protocol which does not share the same
+    address and port, and which is not very old.
 
     If the received port number is 0 the entry is not compared nor stored, but
     an entry of the same protocol is still sent back if available to the
@@ -106,8 +107,9 @@ class PeerLocatorProtocol(Protocol):
             return
         is_new_probe = bool(peer.flags)  # old probes report no flags
 
-        log.msg("registering: %s" % peer.addr)
-        random_peer_addr = peer.addr
+        log.msg("processing: %s" % (peer,))
+        peer_data = (peer.addr, set(peer.flags))
+        random_peer = None
         try:
             with open(config.helpers['peer-locator'].peer_list, 'a+') as peer_list_file:
                 now = time.time()  # only consider entries not older than max peer age
@@ -116,31 +118,29 @@ class PeerLocatorProtocol(Protocol):
                                    [self._parsePeerEntry(l) for l in peer_list_file.readlines()])
                 if peer.addr.endswith(':0'):
                     log.msg('query-only request, not saving peer')
-                elif peer.addr in [p.addr for p in peer_list]:  # only compare IP:PORT
+                elif peer_data in [(p.addr, set(p.flags)) for p in peer_list]:  # compare IP:PORT and flags
                     log.msg('we already know the peer')
                 else:
-                    log.msg('new peer: %s' % (peer,))
+                    log.msg('new peer')
                     peer_list_file.write(self._formatPeerEntry(peer) + '\n')
-                    peer_list.append(peer)
-                peer_pool_size = len(peer_list)
 
-                log.msg(str(peer_list))
-                log.msg("choosing a random peer from pool of %d peers" % peer_pool_size)
-                # Do not return any entry with the same ``PUB_ADDR:PORT``.
+                # Get a peer entry with a different ``PUB_ADDR:PORT``.
                 # Query-only peers never match since entries with port 0 are never stored.
-                while(peer_pool_size > 1 and random_peer_addr == peer.addr):
-                    random_peer = random.choice(peer_list)
-                    random_peer_addr = random_peer[1]
+                other_peers = [p for p in peer_list if p.addr != peer.addr]
+                log.msg("choosing a random peer from a pool of %d peers" % len(other_peers))
+                if other_peers:
+                    random_peer = random.choice(other_peers)
 
         except IOError as e:
             log.msg("IOError %s" % e)
 
-        if (random_peer_addr == peer.addr):
-            out = ''
-        else:
-            log.msg("seeding peer %s to peer %s" % (random_peer_addr, peer.addr))
+        if random_peer:
+            log.msg("seeding: %s" % (random_peer,))
             out = (self._formatPeerEntry(random_peer) if is_new_probe
                    else self._formatPeerEntryOld(random_peer))
+        else:
+            log.msg("no other peers to seed")
+            out = ''
 
         self.transport.write(out)
         self.transport.loseConnection()
